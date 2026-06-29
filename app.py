@@ -137,14 +137,12 @@ async def on_raw_reaction_add(payload):
         return
 
     prompt = f"""
-Translate into {language}.
+    Translate into {language}.
 
-Do not include the language name in the response.
+    Return ONLY the translated text.
 
-Return ONLY the translated text.
-
-{message.content}
-"""
+    {message.content}
+    """
 
     response = client.models.generate_content(
         model=MODEL,
@@ -152,7 +150,7 @@ Return ONLY the translated text.
     )
 
     reply = await message.reply(
-        f"**{language}**\n{response.text}",
+        response.text,
         mention_author=False
     )
 
