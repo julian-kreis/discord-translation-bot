@@ -139,6 +139,8 @@ async def on_raw_reaction_add(payload):
     prompt = f"""
 Translate into {language}.
 
+Do not include the language name in the response.
+
 Return ONLY the translated text.
 
 {message.content}
