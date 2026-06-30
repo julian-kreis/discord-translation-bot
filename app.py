@@ -1,5 +1,6 @@
 import os
 import discord
+import asyncio
 from discord.ext import commands
 from dotenv import load_dotenv
 from google import genai
@@ -25,6 +26,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # message_id -> {language: list of reply_message_id}
 translations = OrderedDict()
+reaction_stack = {}
 
 REGIONAL_BASE = 0x1F1E6
 
@@ -96,21 +98,6 @@ def language_from_flag(flag):
     return COUNTRY_LANGUAGE.get(country)
 
 
-async def language_still_reacted(message, language):
-    for reaction in message.reactions:
-        emoji = str(reaction.emoji)
-
-        if language_from_flag(emoji) != language:
-            continue
-
-        users = [u async for u in reaction.users()]
-
-        if any(not u.bot for u in users):
-            return True
-
-    return False
-
-
 @bot.event
 async def on_ready():
     print(bot.user)
@@ -131,11 +118,20 @@ async def on_raw_reaction_add(payload):
 
     if message.id not in translations:
         if len(translations) >= MAX_CACHED_MESSAGES:
-            translations.popitem(last=False)
+            oldest_message_id, _ = translations.popitem(last=False)
+            for key in list(reaction_stack):
+                if key[0] == oldest_message_id:
+                    del reaction_stack[key]
         translations[message.id] = {}
+
+    reaction_key = (message.id, payload.user_id, str(payload.emoji))
+
+    if reaction_key in reaction_stack:
+        return
 
     if language not in translations[message.id]:
         translations[message.id][language] = []
+
 
     # ---------------------------
     # Context builder
@@ -223,17 +219,27 @@ Message Text:
 {message.content}
 """
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt
-    )
+    try:
+        async with channel.typing():
+            response = await asyncio.to_thread(
+                client.models.generate_content,
+                model=MODEL,
+                contents=prompt,
+            )
+    except Exception:
+        await message.reply(
+            "Translation API failure.",
+            mention_author=False
+        )
+        return
 
     reply = await message.reply(
         response.text,
         mention_author=False
     )
-
-    translations[message.id][language].append(reply.id)
+    
+    reaction_stack[reaction_key] = language
+    translations[message.id][language].append((reaction_key, reply.id))
 
 
 @bot.event
@@ -247,26 +253,37 @@ async def on_raw_reaction_remove(payload):
     if language is None:
         return
 
+    reaction_key = (message.id, payload.user_id, str(payload.emoji))
+
+    if reaction_key not in reaction_stack:
+        return
+
+    del reaction_stack[reaction_key]
+
     if message.id not in translations:
         return
 
     if language not in translations[message.id]:
         return
 
-    if await language_still_reacted(message, language):
-        return
+    stack = translations[message.id][language]
 
-    try:
-        reply_id = translations[message.id][language].pop()
-        reply = await channel.fetch_message(reply_id)
-        await reply.delete()
-    except (discord.NotFound, IndexError):
-        pass
+    for i in range(len(stack) - 1, -1, -1):
+        if stack[i][0] == reaction_key:
+            _, reply_id = stack.pop(i)
+
+            try:
+                reply = await channel.fetch_message(reply_id)
+                await reply.delete()
+            except discord.NotFound:
+                pass
+
+            break
 
     if not translations[message.id][language]:
         del translations[message.id][language]
 
-    if message.id in translations and not translations[message.id]:
+    if not translations[message.id]:
         del translations[message.id]
 
 
