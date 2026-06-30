@@ -9,6 +9,9 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+MAX_CONTEXT_MESSAGES = 12
+MAX_CONTEXT_CHARACTERS = 2500
+
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 intents = discord.Intents.default()
@@ -134,41 +137,65 @@ async def on_raw_reaction_add(payload):
         return
 
     # ---------------------------
-    # Build context
+    # Context builder
     # ---------------------------
+
     context_messages = []
+    total_chars = 0
 
-    async def collect_reply_chain(msg, depth=0, max_depth=5):
-        """Walk up reply chain (message.reference)"""
-        if depth >= max_depth:
-            return
+    async def add_message(msg):
+        nonlocal total_chars
 
-        if msg.reference and msg.reference.message_id:
-            try:
-                parent = await channel.fetch_message(msg.reference.message_id)
+        if not msg:
+            return False
 
-                # ignore bot messages
-                if parent.author.id != bot.user.id:
-                    context_messages.append(parent)
+        if msg.author.id == bot.user.id:
+            return False
 
-                await collect_reply_chain(parent, depth + 1, max_depth)
+        content = msg.content or ""
 
-            except Exception:
-                return
+        if len(context_messages) >= MAX_CONTEXT_MESSAGES:
+            return False
 
-    if message.reference and message.reference.message_id:
-        # CASE 1: reply chain exists
-        await collect_reply_chain(message)
-    else:
-        # CASE 2: fallback to last 3 messages in channel
-        async for msg in channel.history(limit=10, before=message):
-            if len(context_messages) >= 3:
-                break
-            if msg.author.id == bot.user.id:
+        if total_chars + len(content) > MAX_CONTEXT_CHARACTERS:
+            return False
+
+        context_messages.append(msg)
+        total_chars += len(content)
+        return True
+
+    async def get_previous_message(msg):
+        async for m in channel.history(limit=20, before=msg):
+            if m.author.id == bot.user.id:
                 continue
-            context_messages.append(msg)
+            return m
+        return None
 
-    context_messages = list(reversed(context_messages))
+    async def walk_back(start_msg):
+        current = start_msg
+
+        while current:
+            added = await add_message(current)
+            if not added:
+                break
+
+            # 1) try reply chain
+            next_msg = None
+            if current.reference and current.reference.message_id:
+                try:
+                    next_msg = await channel.fetch_message(current.reference.message_id)
+                except Exception:
+                    next_msg = None
+
+            # 2) fallback to previous message
+            if next_msg is None:
+                next_msg = await get_previous_message(current)
+
+            current = next_msg
+
+    await walk_back(message)
+
+    context_messages.reverse()
 
     context_text = "\n".join(
         f"{m.author.display_name}: {m.content}"
