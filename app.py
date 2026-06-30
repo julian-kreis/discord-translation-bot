@@ -3,14 +3,16 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from google import genai
+from collections import OrderedDict
 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-MAX_CONTEXT_MESSAGES = 12
-MAX_CONTEXT_CHARACTERS = 2500
+MAX_CONTEXT_MESSAGES = 6
+MAX_CONTEXT_CHARACTERS = 1200
+MAX_CACHED_MESSAGES = 1000
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -21,30 +23,24 @@ intents.guild_reactions = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# message_id -> {language: reply_message_id}
-translations = {}
+# message_id -> {language: list of reply_message_id}
+translations = OrderedDict()
 
 REGIONAL_BASE = 0x1F1E6
 
 COUNTRY_LANGUAGE = {
-    # English
     "US": "English", "GB": "English", "AU": "English",
     "CA": "English", "NZ": "English", "IE": "English",
 
-    # French
     "FR": "French", "BE": "French", "CH": "French",
 
-    # Spanish
     "ES": "Spanish", "MX": "Spanish", "AR": "Spanish",
     "CL": "Spanish", "CO": "Spanish", "PE": "Spanish",
 
-    # Portuguese
     "PT": "Portuguese", "BR": "Portuguese",
 
-    # German
     "DE": "German", "AT": "German",
 
-    # Chinese
     "CN": "Simplified Chinese",
     "SG": "Simplified Chinese",
     "TW": "Traditional Chinese",
@@ -119,6 +115,7 @@ async def language_still_reacted(message, language):
 async def on_ready():
     print(bot.user)
 
+
 @bot.event
 async def on_raw_reaction_add(payload):
 
@@ -132,9 +129,13 @@ async def on_raw_reaction_add(payload):
     if language is None:
         return
 
-    translations.setdefault(message.id, {})
-    if language in translations[message.id]:
-        return
+    if message.id not in translations:
+        if len(translations) >= MAX_CACHED_MESSAGES:
+            translations.popitem(last=False)
+        translations[message.id] = {}
+
+    if language not in translations[message.id]:
+        translations[message.id][language] = []
 
     # ---------------------------
     # Context builder
@@ -179,7 +180,6 @@ async def on_raw_reaction_add(payload):
             if not added:
                 break
 
-            # 1) try reply chain
             next_msg = None
             if current.reference and current.reference.message_id:
                 try:
@@ -187,7 +187,6 @@ async def on_raw_reaction_add(payload):
                 except Exception:
                     next_msg = None
 
-            # 2) fallback to previous message
             if next_msg is None:
                 next_msg = await get_previous_message(current)
 
@@ -202,9 +201,6 @@ async def on_raw_reaction_add(payload):
         for m in context_messages
     )
 
-    # ---------------------------
-    # Prompt
-    # ---------------------------
     prompt = f"""
 System Instructions:
 
@@ -237,7 +233,7 @@ Message Text:
         mention_author=False
     )
 
-    translations[message.id][language] = reply.id
+    translations[message.id][language].append(reply.id)
 
 
 @bot.event
@@ -261,14 +257,16 @@ async def on_raw_reaction_remove(payload):
         return
 
     try:
-        reply = await channel.fetch_message(translations[message.id][language])
+        reply_id = translations[message.id][language].pop()
+        reply = await channel.fetch_message(reply_id)
         await reply.delete()
-    except discord.NotFound:
+    except (discord.NotFound, IndexError):
         pass
 
-    del translations[message.id][language]
+    if not translations[message.id][language]:
+        del translations[message.id][language]
 
-    if not translations[message.id]:
+    if message.id in translations and not translations[message.id]:
         del translations[message.id]
 
 
