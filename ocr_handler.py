@@ -92,28 +92,36 @@ async def ensure_under_1mb(img_bytes: bytes):
 
 
 async def run_ocr_space(session, img_bytes: bytes, filename: str):
-    """
-    Calls OCR.space API
-    """
-
     try:
         data = aiohttp.FormData()
+
         data.add_field("apikey", OCR_SPACE_API_KEY)
         data.add_field("language", "eng")
+        data.add_field("OCREngine", "2")
         data.add_field("isOverlayRequired", "false")
-        data.add_field("file", img_bytes, filename=filename or "image.jpg")
 
-        async with session.post(OCR_SPACE_URL, data=data, timeout=30) as resp:
-            if resp.status != 200:
+        data.add_field(
+            "file",
+            img_bytes,
+            filename=filename or "image.jpg",
+            content_type="application/octet-stream"
+        )
+
+        async with session.post(OCR_SPACE_URL, data=data, timeout=60) as resp:
+            raw = await resp.json()
+
+            if raw.get("IsErroredOnProcessing"):
+                print("OCR ERROR:", raw.get("ErrorMessage"))
                 return None
 
-            result = await resp.json()
-
-            parsed = result.get("ParsedResults")
+            parsed = raw.get("ParsedResults")
             if not parsed:
+                print("OCR EMPTY RESPONSE:", raw)
                 return None
 
-            return parsed[0].get("ParsedText", "").strip() or None
+            text = parsed[0].get("ParsedText", "")
+            return text.strip() if text else None
 
-    except Exception:
+    except Exception as e:
+        print("OCR EXCEPTION:", e)
         return None
