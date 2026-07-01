@@ -100,7 +100,7 @@ async def run_ocr_space(session, img_bytes: bytes, filename: str):
 
         data.add_field("apikey", OCR_SPACE_API_KEY)
         data.add_field("language", "eng")
-        data.add_field("OCREngine", "2")
+        data.add_field("OCREngine", "1")
         data.add_field("isOverlayRequired", "false")
 
         data.add_field(
