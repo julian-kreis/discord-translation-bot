@@ -217,7 +217,7 @@ async def on_raw_reaction_add(payload):
         if message_has_image(message):
             ocr_text = await extract_image_text(message)
             if ocr_text:
-                ocr_section = f"\n[Image Text]\n{ocr_text}"
+                ocr_section = f"\n[[{ocr_text}]]"
 
         # ---------------------------
         # Prompt
@@ -237,6 +237,8 @@ Translate Message Text into {language}.
 Use the conversation context for meaning if needed.
 
 Return ONLY the translated text of Message Text.
+
+You may reformat text in double brackets [[ ]] for readability.
 
 Conversation Context:
 {context_text}
