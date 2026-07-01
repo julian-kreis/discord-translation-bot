@@ -7,11 +7,8 @@ from languages import language_from_flag
 from translation import translate_message
 
 MAX_CACHED_MESSAGES = 1000
-MAX_TRANSLATIONS_PER_LANG = 50
 
 translations = OrderedDict()
-reaction_stack = OrderedDict()
-
 
 class ReactionCog(commands.Cog):
     def __init__(self, bot):
@@ -37,30 +34,62 @@ class ReactionCog(commands.Cog):
         if language is None:
             return
 
-        # Cache management
+        # -------------------------
+        # Cache init / eviction
+        # -------------------------
         if message.id not in translations:
             if len(translations) >= MAX_CACHED_MESSAGES:
-                oldest_message_id, _ = translations.popitem(last=False)
-
-                # Remove any cached reactions for the evicted message
-                for key in list(reaction_stack):
-                    if key[0] == oldest_message_id:
-                        reaction_stack.pop(key, None)
+                translations.popitem(last=False)
 
             translations[message.id] = {}
 
-        reaction_key = (
-            message.id,
-            payload.user_id,
-            str(payload.emoji),
-        )
+        # -------------------------
+        # Duplicate reaction logic
+        # -------------------------
+        if language in translations[message.id]:
+            try:
+                old_reply_id = translations[message.id][language]
+                old_reply = await channel.fetch_message(old_reply_id)
 
-        if reaction_key in reaction_stack:
+                # copy old message content
+                new_reply = await message.reply(
+                    old_reply.content,
+                    mention_author=False,
+                )
+
+                # delete old reply
+                await old_reply.delete()
+
+                # update cache
+                translations[message.id][language] = new_reply.id
+
+            except discord.NotFound:
+                # if deleted externally, just regenerate
+                translated = await translate_message(
+                    message,
+                    channel,
+                    language,
+                )
+
+                new_reply = await message.reply(
+                    translated,
+                    mention_author=False,
+                )
+
+                translations[message.id][language] = new_reply.id
+
+            except Exception as e:
+                print(f"Duplicate translation error: {e}")
+                await message.reply(
+                    "Translation refresh failed.",
+                    mention_author=False,
+                )
+
             return
 
-        if language not in translations[message.id]:
-            translations[message.id][language] = []
-
+        # -------------------------
+        # First-time translation
+        # -------------------------
         stop_typing = asyncio.Event()
 
         async def keep_typing():
@@ -85,20 +114,7 @@ class ReactionCog(commands.Cog):
                 mention_author=False,
             )
 
-            reaction_stack[reaction_key] = language
-
-            if len(reaction_stack) > MAX_CACHED_MESSAGES:
-                reaction_stack.popitem(last=False)
-
-            translations[message.id][language].append(
-                (reaction_key, reply.id)
-            )
-
-            if (
-                len(translations[message.id][language])
-                > MAX_TRANSLATIONS_PER_LANG
-            ):
-                translations[message.id][language].pop(0)
+            translations[message.id][language] = reply.id
 
         except Exception as e:
             print(f"Translation Error: {e}")
@@ -116,53 +132,6 @@ class ReactionCog(commands.Cog):
                 await typing_task
             except asyncio.CancelledError:
                 pass
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
-        channel = (
-            self.bot.get_channel(payload.channel_id)
-            or await self.bot.fetch_channel(payload.channel_id)
-        )
-
-        message = await channel.fetch_message(payload.message_id)
-
-        language = language_from_flag(str(payload.emoji))
-        if language is None:
-            return
-
-        reaction_key = (
-            message.id,
-            payload.user_id,
-            str(payload.emoji),
-        )
-
-        reaction_stack.pop(reaction_key, None)
-
-        if message.id not in translations:
-            return
-
-        if language not in translations[message.id]:
-            return
-
-        stack = translations[message.id][language]
-
-        for i in range(len(stack) - 1, -1, -1):
-            if stack[i][0] == reaction_key:
-                _, reply_id = stack.pop(i)
-
-                try:
-                    reply = await channel.fetch_message(reply_id)
-                    await reply.delete()
-                except discord.NotFound:
-                    pass
-
-                break
-
-        if not translations[message.id][language]:
-            del translations[message.id][language]
-
-        if not translations[message.id]:
-            del translations[message.id]
 
 
 async def setup(bot):
