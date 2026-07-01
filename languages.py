@@ -1,42 +1,73 @@
 REGIONAL_BASE = 0x1F1E6
 
+# --- Language Constants ---
+ENGLISH = "English"
+FRENCH = "French"
+SPANISH = "Spanish"
+PORTUGUESE = "Portuguese"
+GERMAN = "German"
+SIMPLIFIED_CHINESE = "Simplified Chinese"
+TRADITIONAL_CHINESE = "Traditional Chinese"
+JAPANESE = "Japanese"
+KOREAN = "Korean"
+ITALIAN = "Italian"
+DUTCH = "Dutch"
+SWEDISH = "Swedish"
+NORWEGIAN = "Norwegian"
+DANISH = "Danish"
+FINNISH = "Finnish"
+POLISH = "Polish"
+CZECH = "Czech"
+SLOVAK = "Slovak"
+HUNGARIAN = "Hungarian"
+ROMANIAN = "Romanian"
+BULGARIAN = "Bulgarian"
+GREEK = "Greek"
+TURKISH = "Turkish"
+RUSSIAN = "Russian"
+UKRAINIAN = "Ukrainian"
+HEBREW = "Hebrew"
+ARABIC = "Arabic"
+THAI = "Thai"
+VIETNAMESE = "Vietnamese"
+HINDI = "Hindi"
+
+# --- Country to Language Mapping ---
 COUNTRY_LANGUAGE = {
-    "US": "English", "GB": "English", "AU": "English",
-    "CA": "English", "NZ": "English", "IE": "English",
-    "FR": "French", "BE": "French", "CH": "French",
-    "ES": "Spanish", "MX": "Spanish", "AR": "Spanish",
-    "CL": "Spanish", "CO": "Spanish", "PE": "Spanish",
-    "PT": "Portuguese", "BR": "Portuguese",
-    "DE": "German", "AT": "German",
-    "CN": "Simplified Chinese",
-    "SG": "Simplified Chinese",
-    "TW": "Traditional Chinese",
-    "HK": "Traditional Chinese",
-    "JP": "Japanese",
-    "KR": "Korean",
-    "IT": "Italian",
-    "NL": "Dutch",
-    "SE": "Swedish",
-    "NO": "Norwegian",
-    "DK": "Danish",
-    "FI": "Finnish",
-    "PL": "Polish",
-    "CZ": "Czech",
-    "SK": "Slovak",
-    "HU": "Hungarian",
-    "RO": "Romanian",
-    "BG": "Bulgarian",
-    "GR": "Greek",
-    "TR": "Turkish",
-    "RU": "Russian",
-    "UA": "Ukrainian",
-    "IL": "Hebrew",
-    "SA": "Arabic",
-    "AE": "Arabic",
-    "EG": "Arabic",
-    "TH": "Thai",
-    "VN": "Vietnamese",
-    "IN": "Hindi",
+    "US": ENGLISH, "GB": ENGLISH, "AU": ENGLISH,
+    "CA": ENGLISH, "NZ": ENGLISH, "IE": ENGLISH,
+    "FR": FRENCH, "BE": FRENCH, "CH": FRENCH,
+    "ES": SPANISH, "MX": SPANISH, "AR": SPANISH,
+    "CL": SPANISH, "CO": SPANISH, "PE": SPANISH,
+    "PT": PORTUGUESE, "BR": PORTUGUESE,
+    "DE": GERMAN, "AT": GERMAN,
+    "CN": SIMPLIFIED_CHINESE,
+    "SG": SIMPLIFIED_CHINESE,
+    "TW": TRADITIONAL_CHINESE,
+    "HK": TRADITIONAL_CHINESE,
+    "JP": JAPANESE,
+    "KR": KOREAN,
+    "IT": ITALIAN,
+    "NL": DUTCH,
+    "SE": SWEDISH,
+    "NO": NORWEGIAN,
+    "DK": DANISH,
+    "FI": FINNISH,
+    "PL": POLISH,
+    "CZ": CZECH,
+    "SK": SLOVAK,
+    "HU": HUNGARIAN,
+    "RO": ROMANIAN,
+    "BG": BULGARIAN,
+    "GR": GREEK,
+    "TR": TURKISH,
+    "RU": RUSSIAN,
+    "UA": UKRAINIAN,
+    "IL": HEBREW,
+    "SA": ARABIC, "AE": ARABIC, "EG": ARABIC,
+    "TH": THAI,
+    "VN": VIETNAMESE,
+    "IN": HINDI,
 }
 
 def flag_to_country(flag):
