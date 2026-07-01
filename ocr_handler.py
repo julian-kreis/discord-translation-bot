@@ -3,6 +3,9 @@ import asyncio
 import io
 import os
 from PIL import Image
+from dotenv import load_dotenv
+
+load_dotenv()
 
 OCR_SPACE_API_KEY = os.getenv("OCR_SPACE_API_KEY")
 OCR_SPACE_URL = "https://api.ocr.space/parse/image"
