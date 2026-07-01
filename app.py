@@ -15,6 +15,7 @@ MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 MAX_CONTEXT_MESSAGES = 6
 MAX_CONTEXT_CHARACTERS = 1200
 MAX_CACHED_MESSAGES = 1000
+MAX_TRANSLATIONS_PER_LANG = 50
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -26,7 +27,6 @@ intents.guild_reactions = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 translations = OrderedDict()
-
 reaction_stack = OrderedDict()
 
 REGIONAL_BASE = 0x1F1E6
@@ -106,10 +106,6 @@ async def on_raw_reaction_add(payload):
     channel = bot.get_channel(payload.channel_id) or await bot.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
 
-    ocr_text = None
-    if message_has_image(message):
-        ocr_text = await extract_image_text(message)
-
     language = language_from_flag(str(payload.emoji))
     if language is None:
         return
@@ -132,7 +128,7 @@ async def on_raw_reaction_add(payload):
         translations[message.id][language] = []
 
     # ===========================
-    # 🔥 INSTANT TYPING FIX
+    # typing indicator
     # ===========================
 
     stop_typing = asyncio.Event()
@@ -212,6 +208,21 @@ async def on_raw_reaction_add(payload):
             for m in context_messages
         )
 
+        # ---------------------------
+        # OCR (SAFE + LAZY)
+        # ---------------------------
+
+        ocr_section = ""
+
+        if message_has_image(message):
+            ocr_text = await extract_image_text(message)
+            if ocr_text:
+                ocr_section = f"\n[Image Text]\n{ocr_text}"
+
+        # ---------------------------
+        # Prompt
+        # ---------------------------
+
         prompt = f"""
 System Instructions:
 
@@ -232,8 +243,7 @@ Conversation Context:
 
 Message Text:
 {message.content}
-
-{ocr_text}
+{ocr_section}
 """
 
         response = await asyncio.to_thread(
@@ -249,11 +259,13 @@ Message Text:
 
         reaction_stack[reaction_key] = language
 
-        # ✅ enforce cap
         if len(reaction_stack) > MAX_CACHED_MESSAGES:
             reaction_stack.popitem(last=False)
 
         translations[message.id][language].append((reaction_key, reply.id))
+
+        if len(translations[message.id][language]) > MAX_TRANSLATIONS_PER_LANG:
+            translations[message.id][language].pop(0)
 
     except Exception:
         await message.reply(
@@ -264,6 +276,10 @@ Message Text:
     finally:
         stop_typing.set()
         typing_task.cancel()
+        try:
+            await typing_task
+        except asyncio.CancelledError:
+            pass
 
 
 @bot.event
@@ -278,7 +294,6 @@ async def on_raw_reaction_remove(payload):
 
     reaction_key = (message.id, payload.user_id, str(payload.emoji))
 
-    # safe removal
     reaction_stack.pop(reaction_key, None)
 
     if message.id not in translations:
@@ -298,7 +313,6 @@ async def on_raw_reaction_remove(payload):
                 await reply.delete()
             except discord.NotFound:
                 pass
-
             break
 
     if not translations[message.id][language]:
