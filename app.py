@@ -217,7 +217,7 @@ async def on_raw_reaction_add(payload):
         if message_has_image(message):
             ocr_text = await extract_image_text(message)
             if ocr_text:
-                ocr_section = f"[Image Text]\n{ocr_text}"
+                ocr_section = ocr_text
 
         # ---------------------------
         # Prompt

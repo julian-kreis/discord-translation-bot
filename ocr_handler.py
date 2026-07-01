@@ -28,16 +28,16 @@ async def extract_image_text(message):
     """
     Extracts text using OCR.space API.
     Applies compression to respect 1MB upload limit.
-    Returns: "[ text ]"
+    Returns formatted text separating multiple images.
     """
-
     if not message.attachments:
         return None
 
     results = []
 
     async with aiohttp.ClientSession() as session:
-        for att in message.attachments:
+        # Enumerate gives us a counter (i) to label our images
+        for i, att in enumerate(message.attachments):
 
             if att.content_type and not att.content_type.startswith("image"):
                 continue
@@ -54,7 +54,8 @@ async def extract_image_text(message):
                 text = await run_ocr_space(session, img_bytes, att.filename)
 
                 if text:
-                    results.append(text)
+                    # Explicitly label each image for the LLM's context
+                    results.append(f"[Image {i + 1} Text]\n{text}")
 
             except Exception:
                 continue
@@ -62,7 +63,8 @@ async def extract_image_text(message):
     if not results:
         return None
 
-    return "[" + "\n".join(results).strip() + "]"
+    # Join the labeled results with a newline gap
+    return "\n\n".join(results).strip()
 
 
 async def ensure_under_1mb(img_bytes: bytes):
