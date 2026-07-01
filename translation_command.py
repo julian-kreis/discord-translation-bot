@@ -20,7 +20,7 @@ class TranslationCog(commands.Cog):
 
         try:
             # 1. Get the translation
-            translated_text = await translate_text(text, language)
+            translated_text = await translate_text(text.split('(')[0].strip(), language)
             
             # 2. Format the entire block
             full_output = f"{interaction.user.display_name}: {text}\n{language}: {translated_text}"
