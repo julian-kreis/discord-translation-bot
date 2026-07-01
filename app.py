@@ -5,6 +5,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from google import genai
 from collections import OrderedDict
+from ocr_handler import message_has_image, extract_image_text
 
 load_dotenv()
 
@@ -104,6 +105,10 @@ async def on_raw_reaction_add(payload):
 
     channel = bot.get_channel(payload.channel_id) or await bot.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
+
+    ocr_text = None
+    if message_has_image(message):
+        ocr_text = await extract_image_text(message)
 
     language = language_from_flag(str(payload.emoji))
     if language is None:
@@ -227,6 +232,8 @@ Conversation Context:
 
 Message Text:
 {message.content}
+
+{ocr_text}
 """
 
         response = await asyncio.to_thread(
