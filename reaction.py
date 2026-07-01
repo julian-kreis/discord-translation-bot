@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 from languages import language_from_flag
@@ -11,7 +10,7 @@ class ReactionCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"Logged in as {self.bot.user}!")
+        print(f"{self.bot.user} reaction.py ready!")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
