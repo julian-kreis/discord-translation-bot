@@ -1,3 +1,4 @@
+import json
 import aiosqlite
 
 DB_FILE = "translation_reply_cache.db"
@@ -8,37 +9,36 @@ async def init_db():
     """Initializes the database and creates the translations table."""
     async with aiosqlite.connect(DB_FILE) as db:
         await db.execute("PRAGMA journal_mode=WAL;")
-        # Using a composite primary key. SQLite provides a hidden 'rowid' 
-        # for this table that automatically increments on every insert.
+        # Changed reply_id to reply_ids (TEXT) to hold a JSON array
         await db.execute("""
             CREATE TABLE IF NOT EXISTS cached_translations (
                 message_id INTEGER,
                 language TEXT,
-                reply_id INTEGER,
+                reply_ids TEXT,
                 PRIMARY KEY (message_id, language)
             )
         """)
         await db.commit()
 
-async def get_translation(message_id: int, language: str) -> int | None:
-    """Retrieves a cached reply_id for a given message and language."""
+async def get_translation(message_id: int, language: str) -> list[int] | None:
+    """Retrieves a cached list of reply_ids for a given message and language."""
     async with aiosqlite.connect(DB_FILE) as db:
         async with db.execute(
-            "SELECT reply_id FROM cached_translations WHERE message_id = ? AND language = ?",
+            "SELECT reply_ids FROM cached_translations WHERE message_id = ? AND language = ?",
             (message_id, language)
         ) as cursor:
             row = await cursor.fetchone()
-            return row[0] if row else None
+            if row and row[0]:
+                return json.loads(row[0])
+            return None
 
-async def set_translation(message_id: int, language: str, reply_id: int):
+async def set_translation(message_id: int, language: str, reply_ids: list[int]):
     """Inserts or updates a translation, batch-evicting old entries if the overshoot threshold is met."""
     async with aiosqlite.connect(DB_FILE) as db:
-        # INSERT OR REPLACE keeps things clean, but note that REPLACE deletes the old row
-        # and inserts a new one, which helpfully bumps its 'rowid' to the end of the line!
         await db.execute("""
-            INSERT OR REPLACE INTO cached_translations (message_id, language, reply_id)
+            INSERT OR REPLACE INTO cached_translations (message_id, language, reply_ids)
             VALUES (?, ?, ?)
-        """, (message_id, language, reply_id))
+        """, (message_id, language, json.dumps(reply_ids)))
         await db.commit()
         
         # --- Batch Eviction Logic using rowid ---
