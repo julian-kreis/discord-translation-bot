@@ -4,6 +4,7 @@ import asyncio
 from discord.ext import commands
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types 
 from collections import OrderedDict
 
 load_dotenv()
@@ -16,6 +17,7 @@ MAX_CONTEXT_CHARACTERS = 1200
 MAX_CACHED_MESSAGES = 1000
 MAX_TRANSLATIONS_PER_LANG = 50
 
+# Initialize the GenAI Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 intents = discord.Intents.default()
@@ -104,6 +106,7 @@ async def on_raw_reaction_add(payload):
     if language is None:
         return
 
+    # Cache management
     if message.id not in translations:
         if len(translations) >= MAX_CACHED_MESSAGES:
             oldest_message_id, _ = translations.popitem(last=False)
@@ -193,15 +196,18 @@ async def on_raw_reaction_add(payload):
         # ---------------------------
         contents_payload = []
 
-        # 1. Grab images and append their raw bytes to the payload
+        # 1. Grab images and format them correctly for the SDK using types.Part
         if message.attachments:
             for att in message.attachments:
                 if att.content_type and att.content_type.startswith("image"):
                     img_bytes = await att.read()
-                    contents_payload.append({
-                        "mime_type": att.content_type,
-                        "data": img_bytes
-                    })
+                    
+                    contents_payload.append(
+                        types.Part.from_bytes(
+                            data=img_bytes,
+                            mime_type=att.content_type
+                        )
+                    )
 
         # 2. Build the text prompt
         prompt_text = f"""
@@ -222,9 +228,8 @@ Message Text:
 """
         contents_payload.append(prompt_text)
 
-        # 3. Call Gemini with everything (Text + Images)
-        response = await asyncio.to_thread(
-            client.models.generate_content,
+        # 3. Call Gemini asynchronously using the .aio client
+        response = await client.aio.models.generate_content(
             model=MODEL,
             contents=contents_payload,
         )
@@ -234,6 +239,7 @@ Message Text:
             mention_author=False
         )
 
+        # State updates
         reaction_stack[reaction_key] = language
 
         if len(reaction_stack) > MAX_CACHED_MESSAGES:
@@ -258,7 +264,6 @@ Message Text:
             await typing_task
         except asyncio.CancelledError:
             pass
-
 
 @bot.event
 async def on_raw_reaction_remove(payload):
