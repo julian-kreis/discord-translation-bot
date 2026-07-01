@@ -16,14 +16,19 @@ intents.guild_reactions = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print(f"Logged in as {bot.user} and commands synced!")
 
 async def main():
     await translation_reply_cache.init_db()
 
     async with bot:
+        # Load your cogs
         await bot.load_extension("reaction")
+        await bot.load_extension("translation_command") # Load the new file
         await bot.start(TOKEN)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
