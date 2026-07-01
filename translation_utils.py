@@ -4,7 +4,7 @@ from translation import translate_message
 
 MAX_CONCURRENT_REQS = 5
 MAX_MESSAGE_LENGTH = 1900
-MAX_CHUNKS = 3
+MAX_CHUNKS = 4
 
 # Caps simultaneous Translation API and typing requests globally across all importing modules
 TRANSLATION_SEMAPHORE = asyncio.Semaphore(MAX_CONCURRENT_REQS)
