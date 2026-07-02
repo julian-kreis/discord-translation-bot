@@ -79,7 +79,8 @@ class TranslationCog(commands.Cog):
         try:
             translated_text = await translate_text(text, language)
 
-            output = f"**Original:** {text}\n**Translation:** {translated_text}"
+            native_name = LANGUAGES_DICT.get(language, language)
+            output = f"**Original:** {text}\n**{native_name}:** {translated_text}"
 
             chunks = chunk_text(output)
 
@@ -99,7 +100,7 @@ class TranslationCog(commands.Cog):
         results = []
 
         for eng_name, native_name in LANGUAGES_DICT.items():
-            value = eng_name.split("(")[0].strip()
+            value = eng_name
             display = f"{eng_name} ({native_name})"
 
             if (

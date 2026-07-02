@@ -32,6 +32,7 @@ async def main():
     async with bot:
         # Load your cogs
         await bot.load_extension("reaction")
+        await bot.load_extension("app_translate_message")
         await bot.load_extension("translation_command")
         await bot.load_extension("help_command")
         await bot.start(TOKEN)
