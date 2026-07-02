@@ -99,6 +99,7 @@ SWAHILI = "Swahili"
 TAJIK = "Tajik"
 TAMIL = "Tamil"
 TELUGU = "Telugu"
+TURKMEN = "Turkmen"
 URDU = "Urdu"
 UZBEK = "Uzbek"
 WELSH = "Welsh"
@@ -196,6 +197,7 @@ LANGUAGES_DICT = {
     TELUGU: "తెలుగు",
     THAI: "ไทย",
     TURKISH: "Türkçe",
+    TURKMEN: "Türkmen",
     UKRAINIAN: "Українська",
     URDU: "اردو",
     UZBEK: "Oʻzbekcha",
@@ -227,14 +229,14 @@ COUNTRY_LANGUAGE = {
     "DO": SPANISH,
     "EC": SPANISH,
     "SV": SPANISH,
-    "GQ": SPANISH,  # Equatorial Guinea
+    "GQ": SPANISH,
     "GT": SPANISH,
     "HN": SPANISH,
     "NI": SPANISH,
     "PA": SPANISH,
     "PY": SPANISH,
     "PE": SPANISH,
-    "PR": SPANISH,  # Puerto Rico (territory)
+    "PR": SPANISH,
     "UY": SPANISH,
     "VE": SPANISH,
 
@@ -248,6 +250,8 @@ COUNTRY_LANGUAGE = {
     "BE": DUTCH,
     "CH": GERMAN,
     "AT": GERMAN,
+    "LU": FRENCH,
+    "LI": GERMAN,
 
     # Nordics
     "SE": SWEDISH,
@@ -265,13 +269,30 @@ COUNTRY_LANGUAGE = {
     "GR": GREEK,
     "TR": TURKISH,
 
+    # Balkans
+    "HR": CROATIAN,
+    "SI": SLOVENIAN,
+    "BA": BOSNIAN,
+    "RS": SERBIAN,
+    "ME": SERBIAN,
+
+    # Baltics
+    "EE": ESTONIAN,
+    "LV": LATVIAN,
+    "LT": LITHUANIAN,
+
+    # Caucasus
+    "AM": ARMENIAN,
+    "GE": GEORGIAN,
+    "AZ": AZERBAIJANI,
+
     # Slavic / post-Soviet
     "RU": RUSSIAN,
     "UA": UKRAINIAN,
     "BY": RUSSIAN,
     "KZ": RUSSIAN,
 
-    # East Asia (IMPORTANT FIXES)
+    # East Asia
     "CN": SIMPLIFIED_CHINESE,
     "TW": TRADITIONAL_CHINESE,
     "HK": TRADITIONAL_CHINESE,
@@ -294,7 +315,7 @@ COUNTRY_LANGUAGE = {
     "MY": MALAY,
     "PH": FILIPINO,
 
-    # Middle East / North Africa
+    # Middle East / Central Asia
     "SA": ARABIC,
     "AE": ARABIC,
     "EG": ARABIC,
@@ -304,17 +325,45 @@ COUNTRY_LANGUAGE = {
     "MA": ARABIC,
     "DZ": ARABIC,
     "TN": ARABIC,
+    "QA": ARABIC,
+    "KW": ARABIC,
+    "BH": ARABIC,
+    "OM": ARABIC,
+    "YE": ARABIC,
+    "SY": ARABIC,
 
     "IR": PERSIAN,
-    "IL": HEBREW,
     "AF": PERSIAN,
+    "TJ": TAJIK,
+    "TM": TURKMEN,
+    "UZ": UZBEK,
+    "IL": HEBREW,
 
-    # Africa (simplified defaults)
+    # Africa
     "ZA": ENGLISH,
     "NG": ENGLISH,
     "KE": SWAHILI,
     "TZ": SWAHILI,
     "UG": SWAHILI,
+    "GH": ENGLISH,
+    "CI": FRENCH,
+    "SN": FRENCH,
+    "CM": FRENCH,
+    "CD": FRENCH,
+    "AO": PORTUGUESE,
+    "MZ": PORTUGUESE,
+    "MG": MALAGASY,
+    "ZW": ENGLISH,
+    "ET": AMHARIC,
+
+    # Oceania
+    "PG": ENGLISH,
+    "FJ": ENGLISH,
+    "SB": ENGLISH,
+    "VU": FRENCH,
+
+    # South America (non-Spanish additions)
+    "BR": PORTUGUESE,
 }
 
 def flag_to_country(flag):
