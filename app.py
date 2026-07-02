@@ -27,7 +27,8 @@ async def main():
     async with bot:
         # Load your cogs
         await bot.load_extension("reaction")
-        await bot.load_extension("translation_command") # Load the new file
+        await bot.load_extension("translation_command")
+        await bot.load_extension("help_command")
         await bot.start(TOKEN)
 
 if __name__ == "__main__":

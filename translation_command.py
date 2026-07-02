@@ -29,7 +29,7 @@ class TranslationCog(commands.Cog):
 
     @app_commands.command(
         name="send-translated-message",
-        description="Translate text and send translation as yourself."
+        description="Translate text and send the translation as yourself."
     )
     @app_commands.describe(
         language="The target language",
