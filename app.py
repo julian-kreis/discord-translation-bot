@@ -2,6 +2,7 @@ import os
 import asyncio
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 from data import translation_reply_cache
 
@@ -15,6 +16,13 @@ intents.guild_messages = True
 intents.guild_reactions = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+bot.tree.allowed_contexts = app_commands.AppCommandContext(
+        guild=True,
+        dm_channel=True,
+        private_channel=True,
+    )
+
 
 @bot.event
 async def on_ready():

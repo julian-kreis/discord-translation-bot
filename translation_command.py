@@ -29,7 +29,7 @@ class TranslationCog(commands.Cog):
 
     @app_commands.command(
         name="send-translated-message",
-        description="Translate text and send the translation as yourself."
+        description="Translate text and send the translation."
     )
     @app_commands.describe(
         language="The target language",
@@ -41,24 +41,21 @@ class TranslationCog(commands.Cog):
         language: str,
         text: str,
     ):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
+    
+        translated_text = await translate_text(text, language)
 
         try:
-            translated_text = await translate_text(text, language)
-
-            for chunk in chunk_text(translated_text):
-                await self.send_as_user(interaction, chunk)
-
-            await interaction.followup.send(
-                "Translation sent!",
-                ephemeral=True
-            )
-
+            if interaction.guild and interaction.app_permissions.manage_webhooks:
+                for chunk in chunk_text(translated_text):
+                    await self.send_as_user(interaction, chunk)
+                await interaction.delete_original_response()
+            else:
+                for chunk in chunk_text(translated_text):
+                    await interaction.followup.send(chunk)
+                    
         except Exception:
-            await interaction.followup.send(
-                "Error: Likely caused by a lack of Webhook permissions",
-                ephemeral=True
-            )
+            await interaction.followup.send("Translation API Error", ephemeral=True)
 
     @app_commands.command(
         name="translate",
