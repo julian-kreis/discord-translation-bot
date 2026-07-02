@@ -216,6 +216,28 @@ COUNTRY_LANGUAGE = {
     "CA": ENGLISH,
     "SG": ENGLISH,
 
+    # Spanish-speaking Americas
+    "MX": SPANISH,
+    "AR": SPANISH,
+    "BO": SPANISH,
+    "CL": SPANISH,
+    "CO": SPANISH,
+    "CR": SPANISH,
+    "CU": SPANISH,
+    "DO": SPANISH,
+    "EC": SPANISH,
+    "SV": SPANISH,
+    "GQ": SPANISH,  # Equatorial Guinea
+    "GT": SPANISH,
+    "HN": SPANISH,
+    "NI": SPANISH,
+    "PA": SPANISH,
+    "PY": SPANISH,
+    "PE": SPANISH,
+    "PR": SPANISH,  # Puerto Rico (territory)
+    "UY": SPANISH,
+    "VE": SPANISH,
+
     # Europe (simplified defaults)
     "FR": FRENCH,
     "ES": SPANISH,
