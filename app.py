@@ -19,6 +19,11 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     await bot.tree.sync()
+
+    await bot.change_presence(
+        activity=discord.Game(name="/help me understand")
+    )
+
     print(f"Logged in as {bot.user} and commands synced!")
 
 async def main():
