@@ -56,7 +56,7 @@ class TranslationCog(commands.Cog):
 
         except Exception:
             await interaction.followup.send(
-                "Translation API Error",
+                "Error: Likely caused by a lack of Webhook permissions",
                 ephemeral=True
             )
 
@@ -87,7 +87,7 @@ class TranslationCog(commands.Cog):
                 await interaction.followup.send(chunk)
 
         except Exception:
-            await interaction.followup.send("Error: Likely caused by a lack of Webhook permissions")
+            await interaction.followup.send("Translation API Error")
 
     @send_translated_message.autocomplete("language")
     @translate.autocomplete("language")
